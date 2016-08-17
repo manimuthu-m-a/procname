@@ -31,7 +31,7 @@
 typedef ssize_t Py_ssize_t;
 #endif
 
-#ifdef __linux
+#if define (__linux ) || define (__linux__) || define (linux)
 #include <sys/prctl.h>
 #endif
 
@@ -56,16 +56,7 @@ static PyObject *procname_setprocname(PyObject *self, PyObject *args) {
         return NULL;
     }
 
-    Py_GetArgcArgv(&argc, &argv);
-    for (argn = buflen = 0; argn < argc; argn++) {
-        buflen += (Py_ssize_t)strlen(argv[argn]) + 1;
-    }
-    strncpy(*argv, name, (size_t)buflen - 1);
-    if (buflen > 0) {
-        argv[0][buflen - 1]= '\0';
-    }
-
-#ifdef __linux
+#if define (__linux ) || define (__linux__) || define (linux)
     /* Use the much nicer prctl API where possible (GNU/Linux.)
        Note: Rather than overwriting argv as above, this sets task_struct.comm which is fixed at 16 bytes.
        Not quite the same!
@@ -73,6 +64,15 @@ static PyObject *procname_setprocname(PyObject *self, PyObject *args) {
        `setcap 'CAP_SYS_RESOURCE=+ep'`. */
     if (prctl(PR_SET_NAME, name, 0, 0, 0)) {
         PyErr_SetFromErrno(PyExc_OSError);
+    }
+#else
+    Py_GetArgcArgv(&argc, &argv);
+    for (argn = buflen = 0; argn < argc; argn++) {
+        buflen += (Py_ssize_t)strlen(argv[argn]) + 1;
+    }
+    strncpy(*argv, name, (size_t)buflen - 1);
+    if (buflen > 0) {
+        argv[0][buflen - 1]= '\0';
     }
 #endif
 
